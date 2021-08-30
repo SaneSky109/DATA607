@@ -1,0 +1,153 @@
+---
+title: 'HW1: US Poll Data from 2020'
+author: "Eric Lehmphul"
+date: "August 29, 2021"
+output: html_document
+---
+
+# Overview
+
+The article that I chose is "Why Many Americans Don't Vote", by Amelia Thomsn-DeVeux, Jasmine Mithani, and Laura Bronner. The article used a poll to collect data to study why many Americans do not vote. This is an important topic because anywhere between 35 to 60 percent of eligible voters do not cast a ballot in any given electin, as stated in the article. The link to the article is: https://projects.fivethirtyeight.com/non-voters-poll-2020-election/. 
+
+# Code
+
+## Read .csv file
+
+```{r}
+poll.data <- read.csv("poll_data.csv")
+
+# Check the first few rows of the dataset using head() function
+head(poll.data)
+```
+
+It is clear to see that: the column names need to be changed, entry names need to be more clear, and the number of columns need can be reduced.
+
+## Subset the data
+
+```{r}
+poll.data.subset<-poll.data[,c(4:13,27:37,42:45,54,82,84,110)]
+
+head(poll.data.subset)
+```
+
+After some time looking at the dataset and article, I decided that these variables are most useful in determining the target variable: voter_category. Now let's adjust the column names adn entry names for all unclear variable names and entry names.
+
+## Renaming the Columns and Entries
+
+```{r}
+# Renaming Variables
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_1'] <- 'Importance_of_Voting'
+poll.data.subset$Importance_of_Voting[poll.data.subset$Importance_of_Voting == -1]<-1
+poll.data.subset$Importance_of_Voting<-factor(poll.data.subset$Importance_of_Voting,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_2'] <- 'Importance_of_Jury_Duty'
+poll.data.subset$Importance_of_Jury_Duty[poll.data.subset$Importance_of_Jury_Duty == -1]<-1
+poll.data.subset$Importance_of_Jury_Duty<-factor(poll.data.subset$Importance_of_Jury_Duty,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_3'] <- 'Importance_of_Following_Politics'
+poll.data.subset$Importance_of_Following_Politics[poll.data.subset$Importance_of_Following_Politics == -1]<-1
+poll.data.subset$Importance_of_Following_Politics<-factor(poll.data.subset$Importance_of_Following_Politics,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_4'] <- 'Importance_of_the_Flag'
+poll.data.subset$Importance_of_the_Flag[poll.data.subset$Importance_of_the_Flag == -1]<-1
+poll.data.subset$Importance_of_the_Flag<-factor(poll.data.subset$Importance_of_the_Flag,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_5'] <- 'Importance_of_US_Census'
+poll.data.subset$Importance_of_US_Census[poll.data.subset$Importance_of_US_Census == -1]<-1
+poll.data.subset$Importance_of_US_Census<-factor(poll.data.subset$Importance_of_US_Census,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_6'] <- 'Importance_of_Saying_the_Pledge'
+poll.data.subset$Importance_of_Saying_the_Pledge[poll.data.subset$Importance_of_Saying_the_Pledge == -1]<-1
+poll.data.subset$Importance_of_Saying_the_Pledge<-factor(poll.data.subset$Importance_of_Saying_the_Pledge,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_7'] <- 'Importance_of_Military_Support'
+poll.data.subset$Importance_of_Military_Support[poll.data.subset$Importance_of_Military_Support == -1]<-1
+poll.data.subset$Importance_of_Military_Support<-factor(poll.data.subset$Importance_of_Military_Support,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_8'] <- 'Importance_of_Respecting_Opinions'
+poll.data.subset$Importance_of_Respecting_Opinions[poll.data.subset$Importance_of_Respecting_Opinions == -1]<-1
+poll.data.subset$Importance_of_Respecting_Opinions<-factor(poll.data.subset$Importance_of_Respecting_Opinions,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_9'] <- 'Importance_of_Religion'
+poll.data.subset$Importance_of_Religion[poll.data.subset$Importance_of_Religion == -1]<-1
+poll.data.subset$Importance_of_Religion<-factor(poll.data.subset$Importance_of_Religion,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q2_10'] <- 'Importance_of_Right_to_Protest'
+poll.data.subset$Importance_of_Right_to_Protest[poll.data.subset$Importance_of_Right_to_Protest == -1]<-1
+poll.data.subset$Importance_of_Right_to_Protest<-factor(poll.data.subset$Importance_of_Right_to_Protest,labels = c("very_important", "somewhat_important", "not_so_important", "not_at_all_important"))
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q6'] <- 'How_many_people_in_office_are_like_you'
+poll.data.subset$How_many_people_in_office_are_like_you[poll.data.subset$How_many_people_in_office_are_like_you == -1]<-1
+poll.data.subset$How_many_people_in_office_are_like_you<-factor(poll.data.subset$How_many_people_in_office_are_like_you, labels = c("a lot", "some", "a few", "none"))
+
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q7'] <- 'Opinion_on_Structure_of_US_Government'
+poll.data.subset$Opinion_on_Structure_of_US_Government[poll.data.subset$Opinion_on_Structure_of_US_Government == -1]<-1
+poll.data.subset$Opinion_on_Structure_of_US_Government<-factor(poll.data.subset$Opinion_on_Structure_of_US_Government, labels = c("a lot needs to change", "change is not really needed"))
+
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_1'] <- 'Trust_President'
+poll.data.subset$Trust_President[poll.data.subset$Trust_President == -1]<-1
+poll.data.subset$Trust_President<-factor(poll.data.subset$Trust_President, labels = c("a lot", "some", "not much", "not at all"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_2'] <- 'Trust_Congress'
+poll.data.subset$Trust_Congress[poll.data.subset$Trust_Congress == -1]<-1
+poll.data.subset$Trust_Congress<-factor(poll.data.subset$Trust_Congress, labels = c("a lot", "some", "not much", "not at all"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_3'] <- 'Trust_Supreme_Court'
+poll.data.subset$Trust_Supreme_Court[poll.data.subset$Trust_Supreme_Court == -1]<-1
+poll.data.subset$Trust_Supreme_Court<-factor(poll.data.subset$Trust_Supreme_Court, labels = c("a lot", "some", "not much", "not at all"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_4'] <- 'Trust_CDC'
+poll.data.subset$Trust_CDC[poll.data.subset$Trust_CDC == -1]<-1
+poll.data.subset$Trust_CDC<-factor(poll.data.subset$Trust_CDC, labels = c("a lot", "some", "not much", "not at all"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_5'] <- 'Trust_Elected_Officials'
+poll.data.subset$Trust_Elected_Officials[poll.data.subset$Trust_Elected_Officials == -1]<-1
+poll.data.subset$Trust_Elected_Officials<-factor(poll.data.subset$Trust_Elected_Officials, labels = c("a lot", "some", "not much", "not at all"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_6'] <- 'Trust_CIA_or_FBI'
+poll.data.subset$Trust_CIA_or_FBI[poll.data.subset$Trust_CIA_or_FBI == -1]<-1
+poll.data.subset$Trust_CIA_or_FBI<-factor(poll.data.subset$Trust_CIA_or_FBI, labels = c("a lot", "some", "not much", "not at all"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_7'] <- 'Trust_News_Media_Outlets'
+poll.data.subset$Trust_News_Media_Outlets[poll.data.subset$Trust_News_Media_Outlets == -1]<-1
+poll.data.subset$Trust_News_Media_Outlets<-factor(poll.data.subset$Trust_News_Media_Outlets, labels = c("a lot", "some", "not much", "not at all"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_8'] <- 'Trust_Police'
+poll.data.subset$Trust_Police[poll.data.subset$Trust_Police == -1]<-1
+poll.data.subset$Trust_Police<-factor(poll.data.subset$Trust_Police, labels = c("a lot", "some", "not much", "not at all"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q8_9'] <- 'Trust_US_Postal_Service'
+poll.data.subset$Trust_US_Postal_Service[poll.data.subset$Trust_US_Postal_Service == -1]<-1
+poll.data.subset$Trust_US_Postal_Service<-factor(poll.data.subset$Trust_US_Postal_Service, labels = c("a lot", "some", "not much", "not at all"))
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q10_1'] <- 'Recieve_Longterm_Disability'
+poll.data.subset$Recieve_Longterm_Disability[poll.data.subset$Recieve_Longterm_Disability == -1]<-1
+poll.data.subset$Recieve_Longterm_Disability<-factor(poll.data.subset$Recieve_Longterm_Disability, labels = c("Yes", "No"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q10_2'] <- 'Have_Chronic_Illness'
+poll.data.subset$Have_Chronic_Illness[poll.data.subset$Have_Chronic_Illness == -1]<-1
+poll.data.subset$Have_Chronic_Illness<-factor(poll.data.subset$Have_Chronic_Illness, labels = c("Yes", "No"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q10_3'] <- 'Unemployed_Longer_than_1Year'
+poll.data.subset$Unemployed_Longer_than_1Year[poll.data.subset$Unemployed_Longer_than_1Year == -1]<-1
+poll.data.subset$Unemployed_Longer_than_1Year<-factor(poll.data.subset$Unemployed_Longer_than_1Year, labels = c("Yes", "No"))
+names(poll.data.subset)[names(poll.data.subset) == 'Q10_4'] <- 'Evicted_within_past_Year'
+poll.data.subset$Evicted_within_past_Year[poll.data.subset$Evicted_within_past_Year == -1]<-1
+poll.data.subset$Evicted_within_past_Year<-factor(poll.data.subset$Evicted_within_past_Year, labels = c("Yes", "No"))
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q16'] <- 'How_Easy_is_it_to_Vote_in_National_Elections'
+poll.data.subset$How_Easy_is_it_to_Vote_in_National_Elections[poll.data.subset$How_Easy_is_it_to_Vote_in_National_Elections == -1]<-1
+poll.data.subset$How_Easy_is_it_to_Vote_in_National_Elections<-factor(poll.data.subset$How_Easy_is_it_to_Vote_in_National_Elections, labels = c("Very easy", "Somewhat easy", "Somewhat difficult","Very difficult"))
+
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q23'] <- 'Presidential_Candidate_Vote_for_2020'
+poll.data.subset$Presidential_Candidate_Vote_for_2020[poll.data.subset$Presidential_Candidate_Vote_for_2020 == -1]<-1
+poll.data.subset$Presidential_Candidate_Vote_for_2020<-factor(poll.data.subset$Presidential_Candidate_Vote_for_2020, labels = c("Donald Trump", "Joe Biden", "Unsure"))
+
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q25'] <- 'Following_Presidential_Race_2020'
+poll.data.subset$Following_Presidential_Race_2020[poll.data.subset$Following_Presidential_Race_2020 == -1]<-1
+poll.data.subset$Following_Presidential_Race_2020<-factor(poll.data.subset$Following_Presidential_Race_2020, labels = c("Very closely", "Somewhat closely", "Not very closely","Not closely at all"))
+
+names(poll.data.subset)[names(poll.data.subset) == 'Q30'] <- 'Political_Affiliation'
+poll.data.subset$Political_Affiliation[poll.data.subset$Political_Affiliation == -1]<-1
+poll.data.subset$Political_Affiliation<-factor(poll.data.subset$Political_Affiliation, labels = c("Republican", "Democrat", "Independent","Other","No preference"))
+
+names(poll.data.subset)[names(poll.data.subset) == 'ppage'] <- 'Age'
+names(poll.data.subset)[names(poll.data.subset) == 'educ'] <- 'Education'
+names(poll.data.subset)[names(poll.data.subset) == 'income_cat'] <- 'Income'
+
+# Show the improved colnames and labels
+head(poll.data.subset)
+```
+
+The adjusted names and entries make the dataset much easier to read.
+
+
+# Conclusions
+
+The original polling data needed to be adjusted to make the variables and results easier to understand. I acomplished this through variable selection, renaming columns, and factoring and renaming categorical entries. The target variable is voter_category in which analysis can be conducted to find meaningful insights using the enhanced dataset that I created from the polling data.

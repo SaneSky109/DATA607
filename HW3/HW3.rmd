@@ -1,0 +1,121 @@
+---
+title: 'Week 3: Assignment'
+author: "Eric Lemphul"
+date: "9/12/2021"
+output: html_document
+---
+
+# Overview
+
+Assignment 3 will cover topics related to data manipulation and regular expressions.
+
+# Question 1:
+## Using the 173 majors listed in fivethirtyeight.com’s College Majors dataset [https://fivethirtyeight.com/features/the-economic-guide-to-picking-a-college-major/], provide code that identifies the majors that contain either "DATA" or "STATISTICS"
+
+```{r}
+# Get data from github
+college.majors.data <- read.csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/college-majors/majors-list.csv")
+
+# subset data to only include DATA and STATISTICS
+college.majors.subset <- subset(college.majors.data, grepl("DATA", Major) | grepl("STATISTICS", Major)) # grepl() returns TRUE if condition is met
+
+print(college.majors.subset)
+```
+
+
+# Question 2:
+## Write code that transforms the data below:
+
+### [1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+
+### [5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+
+###  "elderberry"   "lime"         "lychee"       "mulberry"    
+
+### [13] "olive"        "salal berry"
+
+## Into a format like this:
+
+### c("bell pepper", "bilberry", "blackberry", "blood orange", "blueberry", "cantaloupe", "chili pepper", "cloudberry", "elderberry", "lime", "lychee", "mulberry", "olive", "salal berry")
+
+
+```{r}
+# Data from above
+fruit.data <- '[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+
+[13] "olive"        "salal berry"'
+
+# split data by each element
+fruit.data.scan<-scan(text=fruit.data, what='character', quiet=TRUE)
+
+# remove the elements that are not in the new format (example: [1])
+fruit.data.scan<-fruit.data.scan[-c(1,6,11,16)]
+
+# prints the data in the desired format
+fruit.data.reformat<-dput(fruit.data.scan)
+```
+
+# Question 3:
+## Describe, in words, what these expressions will match:
+
+
+
+
+### (.)\1\1
+
+(.)\1\1 will match any string that repeats back to back. Example: aaa
+
+
+### "(.)(.)\\\2\\\1"
+
+"(.)(.)\\\2\\\1" will match to a symmetrical group of 4 characters. Example: abba
+
+### (..)\1
+
+
+(..)\1 will match any string that has 2 characters that repeat once. Example: abab
+
+### "(.).\\\1.\\\1"
+
+"(.).\\\1.\\\1" will match any string that repeats the same character 3 times, but in between each repeated character there is a random character. Example: abaca
+
+### "(.)(.)(.).*\\\3\\\2\\\1"
+
+"(.)(.)(.).*\\\3\\\2\\\1" will match with 6 characters that are symmetric with any set of values in between the symmetry. Examples: "abccba"   "abc33345cba"
+
+
+# Question 4:
+## Construct regular expressions to match words that:
+
+```{r}
+# sample words
+words = c("eye", "noon", "harsh", "church", "shush", "eleven", "banana", "eevee")
+```
+
+### Start and end with the same character.
+
+The regular expression is: ^(.)((.*\\\1\$)|\\\1?\$)
+```{r}
+# Regular Expression: ^(.)((.*\\1$)|\\1?$)
+grep("^(.)((.*\\1$)|\\1?$)",words,value=T)
+```
+
+### Contain a repeated pair of letters (e.g. "church" contains "ch" repeated twice.)
+
+The regular expression is: ([A-Za-z][A-Za-z]).*\\\1
+```{r}
+# Regular Expression: ([A-Za-z][A-Za-z]).*\\1
+grep("([A-Za-z][A-Za-z]).*\\1",words,value=T)
+```
+
+### Contain one letter repeated in at least three places (e.g. "eleven" contains three "e"s.)
+
+The regular expression is: ([A-Za-z]).\*\\\1.\*\\\1
+```{r}
+# Regular Expression: ([A-Za-z]).*\\1.*\\1
+grep("([A-Za-z]).*\\1.*\\1",words,value=T)
+```

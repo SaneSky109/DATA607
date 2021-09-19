@@ -1,0 +1,136 @@
+---
+title: 'Project 1'
+author: "Eric Lemphul"
+date: "9/19/2021"
+output: html_document
+---
+
+
+# Introduction
+
+## Task
+
+In this project, you’re given a text file with chess tournament results where the information has some structure. Your job is to create an R Markdown file that generates a .CSV file (that could for example be imported into a SQL database) with the following information for all of the players:
+
+
+Player’s Name, Player’s State, Total Number of Points, Player’s Pre-Rating, and Average Pre Chess Rating of Opponents
+
+
+For the first player, the information would be:
+
+
+Gary Hua, ON, 6.0, 1794, 1605
+
+
+1605 was calculated by using the pre-tournament opponents’ ratings of 1436, 1563, 1600, 1610, 1649, 1663, 1716, and dividing by the total number of games played.
+
+
+If you have questions about the meaning of the data or the results, please post them on the discussion forum. Data science, like chess, is a game of back and forth…
+
+
+The chess rating system (invented by a Minnesota statistician named Arpad Elo) has been used in many other contexts, including assessing relative strength of employment candidates by human resource departments.
+
+
+You may substitute another text file (or set of text files, or data scraped from web pages) of similar or greater complexity, and create your own assignment and solution. You may work in a small team. All of your code should be in an R markdown file (and published to rpubs.com); with your data accessible for the person running the script.
+
+## Overview
+
+This project employs the use of data transformation techniques to make a messy text file a readable .csv file. The goal is to be able to pull important information, while leveraging patterns in a text file.
+
+# Procedure
+
+
+## Import Data
+
+Read the data file from my github repository using the readLines() function.
+```{r}
+# Read data file
+chess.data <- readLines("https://raw.githubusercontent.com/SaneSky109/DATA607/main/Project1/tournamentinfo.txt")
+head(chess.data)
+```
+
+## Collecting the Desired Data
+
+### Acquire Player Name:
+```{r}
+library(stringr)
+# acquire player name
+player.name <- unlist(str_extract_all(chess.data, "\\w+[A-Z] ?\\w+ \\w+")) 
+player.name <- player.name[-1]
+head(player.name)
+```
+
+### Acquire Player State:
+```{r}
+# acquire player state
+
+# there were only three states in the dataset and they all had a space before the start of string
+player.state <- unlist(str_extract_all(chess.data, "\\sON | \\sMI | \\sOH"))
+head(player.state)
+```
+
+### Acquire Total Number of Points:
+```{r}
+# acquire total number of points
+
+# only number to include a . (ex. 6.0, 5.5, etc.)
+player.total.points <- unlist(str_extract_all(chess.data, "\\d\\.\\d"))
+head(player.total.points)
+```
+
+### Acquire Player Pre-Rating:
+```{r}
+# acquire player pre rating
+
+# R: is always prior to pre rating
+player.pre.rating <- unlist(str_extract_all(chess.data, "(R:\\s*)(\\d+)"))
+# Remove the "R: " in the extracted string
+player.pre.rating <- str_remove_all(player.pre.rating, "R: ")
+head(player.pre.rating)
+
+```
+
+### Average Pre Chess Rating of Opponents:
+```{r}
+# Average Pre Chess Rating of Opponents
+
+# the data required to get the opponents per round is every three rows apart
+new.data <- chess.data[seq(5, length(chess.data), 3)]
+
+# player number
+player.number <- as.integer(str_extract(new.data, "\\d+"))
+
+# need to make player.pre.rating a numeric value to calculate mean
+player.pre.rating <- as.numeric(player.pre.rating)
+
+# extracts the opponent number in each round
+opponent.in.each.round <- str_extract_all(str_extract_all(new.data, "\\d+\\|"), "\\d+")
+
+# declare variables to be used in loop
+n <- length(chess.data)
+avg.pre.rating.of.opponents <- numeric(n / 3)
+
+# calculates the avg pre rating of opponents for each player
+for (i in 1:(n / 3)) { 
+  avg.pre.rating.of.opponents[i] <- mean(player.pre.rating[as.numeric(unlist(opponent.in.each.round[player.number[i]]))]) 
+}
+
+# dropped last row because it was NA due to there only being 64 rows, not 65
+avg.pre.rating.of.opponents <- avg.pre.rating.of.opponents[-65]
+head(avg.pre.rating.of.opponents)
+```
+
+
+## Export to .csv
+
+```{r}
+# creating data frame with desired variables
+cleaned.chess.data <- data.frame(player.name, player.state, player.total.points, player.pre.rating, avg.pre.rating.of.opponents)
+
+# Creating column names
+colnames(cleaned.chess.data) <- c("Players Name","Players State", "Total Points", "Players Pre-Rating", "Avg Pre Chess Rating of Opponents")
+
+head(cleaned.chess.data)
+
+write.csv(cleaned.chess.data, "EL_ChessTournament.csv", row.names=FALSE)
+```

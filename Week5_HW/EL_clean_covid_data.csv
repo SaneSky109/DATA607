@@ -1,0 +1,5 @@
+"Age","Population","Severe.Cases","Percent.Pop","Vaccinated"
+"<50",1116834,43,23.3,"not vax"
+">50",186078,171,7.9,"not vax"
+"<50",3501118,11,73,"full vax"
+">50",2133516,290,90.4,"full vax"

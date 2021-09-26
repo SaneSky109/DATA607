@@ -1,0 +1,203 @@
+---
+title: "Assignment – Tidying and Transforming Vaccination Data"
+author: "Eric Lemphul"
+date: "9/26/2021"
+output: html_document
+---
+
+# Overview
+
+In this assignment, I cleaned the untidy COVID data set provided and performed the analysis necessary to answer the questions provided in the spreadsheet.
+
+
+# Code
+
+## Data Cleaning and Preprocessing
+
+Read the data from github:
+```{r}
+library(tidyverse)
+
+covid.data<-read.csv("https://raw.githubusercontent.com/SaneSky109/DATA607/main/Week5_HW/israeli_vaccination_data_analysis_start.csv")
+```
+
+Subset the data into not vaccinated and fully vaccinated data frames:
+```{r}
+# Subset the data
+
+not.vax <- covid.data %>%
+  select("Age","Population..","Severe.Cases")
+
+
+full.vax <- covid.data %>%
+  select("Age","X","X.1")
+
+
+not.vax <- not.vax %>%
+  slice(-1)
+
+
+full.vax <- full.vax %>%
+  slice(-1)
+```
+
+Extract the percentages using regular expressions:
+```{r}
+# Extract Percentages
+
+not.vax.percent <- unlist(str_extract_all(not.vax$Population.., "\\d*\\.\\d*%"))
+full.vax.percent <- unlist(str_extract_all(full.vax$X, "\\d*\\.\\d*%"))
+
+```
+
+Remove the rows that held the percentages:
+```{r}
+# Remove the rows that had the percentages
+
+not.vax <- not.vax %>%
+  slice(-2,-4)
+
+
+full.vax <- full.vax %>%
+  slice(-2,-4)
+```
+
+Add the percentages that were extracted into a new column:
+```{r}
+# Add percentages to data as a column
+
+not.vax <- not.vax %>%
+  add_column(Percent.Pop = not.vax.percent)
+
+full.vax <- full.vax %>%
+  add_column(Percent.Pop = full.vax.percent)
+```
+
+Rename the columns so the data will be easier to understand:
+```{r}
+# Rename the columns
+
+not.vax <- not.vax %>%
+  rename(Population = Population..)
+
+full.vax <- full.vax %>%
+  rename(Population = X) %>%
+  rename(Severe.Cases = X.1)
+```
+
+Add a column as an indicator to being vaccinated or not:
+```{r}
+# Add column to indicate not vax or full vax
+
+not.vax.list <- c("not vax", "not vax")
+
+full.vax.list <- c("full vax", "full vax")
+
+not.vax <- not.vax %>%
+  add_column(Vaccinated = not.vax.list)
+
+full.vax <- full.vax %>%
+  add_column(Vaccinated = full.vax.list)
+```
+
+Row bind the two data frames:
+```{r}
+# Combine the two data frames
+
+clean.covid.data<-rbind(not.vax,full.vax)
+
+```
+
+Adjust the data types to their proper form. They were originally all character data types:
+```{r}
+# Adjust the data types
+
+clean.covid.data$Percent.Pop <- str_remove_all(clean.covid.data$Percent.Pop, "%")
+clean.covid.data$Percent.Pop <- as.numeric(clean.covid.data$Percent.Pop)
+
+clean.covid.data$Age <- as.factor(clean.covid.data$Age)
+
+clean.covid.data$Population<- str_remove_all(clean.covid.data$Population, ",")
+clean.covid.data$Population <- as.numeric(clean.covid.data$Population)
+
+clean.covid.data$Severe.Cases <- as.numeric(clean.covid.data$Severe.Cases)
+
+clean.covid.data$Vaccinated <- as.factor(clean.covid.data$Vaccinated)
+```
+
+Cleaned Data set:
+```{r}
+# Show clean data
+clean.covid.data
+```
+
+## Analysis
+
+### Do you have enough information to calculate the total population? What does this total population represent?
+
+There is enough information to calculate the total population because the percentage of the population is given in the table. We can use this information to calculate the total population. The total population that is given provides all of the known information collected by the Israeli hospitals. The total population that I calculated represents the population if both of the percentages equaled 100%. See the total population below:
+```{r}
+# Get the sum of the percentages and population
+
+over.50 <- clean.covid.data %>%
+  filter(Age == ">50")
+under.50 <- clean.covid.data %>%
+  filter(Age == "<50")
+
+percent.under.50 <- sum(under.50$Percent.Pop)
+percent.over.50 <- sum(over.50$Percent.Pop)
+
+pop.under.50 <- sum(under.50$Population)
+pop.over.50 <- sum(over.50$Population)
+
+# Calculate the total population since the percentages do not equal 100% with the current numbers
+
+
+total.pop.under.50 <- (pop.under.50 * 100) / percent.under.50
+total.pop.over.50 <- (pop.over.50 * 100) / percent.over.50
+
+
+total.pop <- total.pop.under.50 + total.pop.over.50
+
+cat("The total population is: ", round(total.pop, digits = 0))
+```
+
+### Calculate the Efficacy vs. Disease; Explain your results
+
+The results indicate that the vaccine is not effective in reducing severe cases. This is due to the negative efficacy vs disease value. This is an odd result due to the expectation that the vaccine should reduce the number of hospitalizations. See the Efficacy vs. Disease below:
+
+```{r}
+# Efficacy vs. Disease = 1-(% fully vaccinated severe cases per 100K / % not vaxed severe cases per 100K)
+
+full.vax <- clean.covid.data %>%
+  filter(Vaccinated == "full vax")
+not.vax <- clean.covid.data %>%
+  filter(Vaccinated == "not vax")
+
+severe.full.vax.percent <- sum(full.vax$Severe.Cases)/sum(clean.covid.data$Severe.Cases)
+severe.not.vax.percent <- sum(not.vax$Severe.Cases)/sum(clean.covid.data$Severe.Cases)
+
+
+EvsD <- 1 - (severe.full.vax.percent / severe.not.vax.percent)
+
+cat("The Efficacy vs. Disease is: ", round(EvsD, digits = 5))
+```
+
+
+### From your calculation of efficacy vs. disease, are you able to compare the rate of severe cases in unvaccinated individuals to that in vaccinated individuals?
+
+Yes, it is possible to compare the rates. Fully vaccinated people were entering the hospitals at faster rate than their non vaccinated counterparts. See the rates below:
+
+```{r}
+# Rates
+severe.full.vax.percent <- sum(full.vax$Severe.Cases)/sum(clean.covid.data$Severe.Cases)
+severe.not.vax.percent <- sum(not.vax$Severe.Cases)/sum(clean.covid.data$Severe.Cases)
+
+cat("The rate of severe cases in unvaccinated individuals: ", severe.not.vax.percent)
+cat("The rate of severe cases in vaccinated individuals: ", severe.full.vax.percent)
+```
+
+
+# Conclusions
+
+After cleaning the untidy data, it was shocking to see that the rate of severe cases was more rapid in people who received full vaccination rather than people who were unvaccinated. 

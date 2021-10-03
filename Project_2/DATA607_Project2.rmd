@@ -1,0 +1,322 @@
+---
+title: "Project 2"
+author: "Eric Lehmphul"
+date: "9/30/2021"
+output: html_document
+---
+
+# Introduction
+
+The goal of this assignment is to provide practice in preparing different datasets for downstream analysis work. The three datasets were chosen from the Discussion 5 discussion board.
+
+# Student Testing
+
+This dataset was provided by me, Eric Lehmphul. It is a toy dataset that I created which holds student name, student's testing scores, time studied for test, and gender. Analysis: Does study time impact testing scores?
+
+The dataset can be found here: https://raw.githubusercontent.com/SaneSky109/DATA607/main/Project_2/Data/DATA607_discussion5.csv
+
+## Data Preprocessing
+
+Load packages:
+```{r}
+library(tidyverse)
+```
+
+Read .csv file from github repository:
+```{r}
+test.data <-read.csv("https://raw.githubusercontent.com/SaneSky109/DATA607/main/Project_2/Data/DATA607_discussion5.csv")
+```
+
+Separate the Test Scores and Time Studied for each Test, since they were stored in the same column:
+```{r}
+test.data <- test.data %>% 
+  separate(Test1..TimeStudiedTest1, c("Test1", "Test1_ST"), sep = ",")
+test.data
+
+test.data <- test.data %>% 
+  separate(Test2..TimeStudiedTest2, c("Test2", "Test2_ST"), sep = ",")
+test.data
+
+test.data <- test.data %>% 
+  separate(Test3..TimeStudiedTest3, c("Test3", "Test3_ST"), sep = ",")
+test.data
+
+test.data <- test.data %>% 
+  separate(Test4..TimeStudiedTest4, c("Test4", "Test4_ST"), sep = ",")
+test.data
+```
+
+Create two data frames. One data frame holds information about Time Studied for Test and the other data frame hold the Test score data:
+```{r}
+test.time.data<-test.data[,c(1,3,5,7,9)]
+test.data<-test.data[,-c(3,5,7,9)]
+```
+
+Pivot both data frames into a long format. The data frames are arranged by student name:
+```{r}
+test.data <- test.data %>% 
+  pivot_longer(Test1:Test4, names_to = "Assessment", values_to = "Score") %>% 
+  arrange(Student)
+
+test.time.data <- test.time.data %>% 
+  pivot_longer(Test1_ST:Test4_ST, values_to = "StudyTime") %>% 
+  arrange(Student)
+```
+
+Add the Study Time data to the test.data data frame. Remove all na values from the data more easily perform analysis:
+```{r}
+test.data <- test.data %>%
+  add_column(StudyTime_min = test.time.data$StudyTime)
+
+test.data <- test.data %>%
+  na.omit
+```
+
+Adjust data types to reflect the proper information:
+```{r}
+test.data$Student <- as.factor(test.data$Student)
+test.data$Gender <- as.factor(test.data$Gender)
+test.data$Assessment <- as.factor(test.data$Assessment)
+test.data$Score <- as.numeric(test.data$Score)
+test.data$StudyTime_min <- as.integer(test.data$StudyTime_min)
+```
+
+Cleaned dataset:
+```{r}
+test.data
+```
+
+
+## Analysis: Student Testing
+
+From this plot it is clear to see that study time positively impacts student testing scores. This plot also indicates that females, on average, scored better than the males.
+```{r}
+ggplot(test.data,aes(x=Score, y=StudyTime_min, color = Gender)) + geom_point() + geom_smooth(method = "lm")
+```
+
+
+
+# Customer Churn
+
+
+Mauricio Claudio posted an untidy dataset related to customer churn. The data is presented in a wide format where a long format is more suited for analysis. I analyzed the customer churn rate for each Division in the company.
+
+
+The dataset can be found here: https://raw.githubusercontent.com/SaneSky109/DATA607/main/Project_2/Data/customer_churn_data.csv
+
+## Data Preprocessing
+
+Read .csv file from github repository:
+```{r}
+churn.data <- read.csv("https://raw.githubusercontent.com/SaneSky109/DATA607/main/Project_2/Data/customer_churn_data.csv")
+```
+
+Make sure all rows are accounted for in the Division column. Eliminate the extra row (row 7) because it is empty:
+```{r}
+churn.data$Division[1:2] <- "A"
+churn.data$Division[3:4] <- "B"
+churn.data$Division[5:6] <- "C"
+churn.data$Division[8:9] <- "Total"
+
+churn.data <- churn.data[-7,]
+```
+
+Transform data into a long format:
+```{r}
+churn.data <- churn.data %>%
+  gather(key = "Month",
+         value = "Churn",
+         c(-Division, -Description))
+churn.data
+```
+
+Create two filter dataframes to allow for easy calculation of churn rate downstream:
+```{r}
+Gained <- churn.data %>%
+  filter(Description == "Gained")
+
+Lost <- churn.data %>%
+  filter(Description == "Lost")
+```
+
+Rename columns:
+```{r}
+Gained <- rename(Gained, "Churn_Gained" = Churn)
+Lost <- rename(Lost, "Churn_Lost" = Churn)
+```
+
+Create churn.calc.data to hold the necessary information to calculate customer churn downstream. Remove irrelevant columns:
+```{r}
+churn.calc.data <- Gained %>%
+  add_column(Churn_Lost = Lost$Churn_Lost)
+
+churn.calc.data <- churn.calc.data[,-2]
+```
+
+Created subsets of the data filtered by Division. These subsets will be used to calculate the customer churn:
+```{r}
+A <- churn.calc.data %>%
+  filter(Division == "A")
+
+B <- churn.calc.data %>%
+  filter(Division == "B")
+
+C <- churn.calc.data %>%
+  filter(Division == "C")
+
+Total <- churn.calc.data %>%
+  filter(Division == "Total")
+```
+
+
+
+## Analysis: Customer Churn
+
+Calculated the Monthly Customer Churn:
+```{r}
+A <- A %>%
+  mutate(churn_rate = abs(Churn_Lost)/Churn_Gained)
+
+B <- B %>%
+  mutate(churn_rate = abs(Churn_Lost)/Churn_Gained)
+
+C <- C %>%
+  mutate(churn_rate = abs(Churn_Lost)/Churn_Gained)
+
+Total <- Total %>%
+  mutate(churn_rate = abs(Churn_Lost)/Churn_Gained)
+```
+
+Combined the subsets into one data to graph:
+```{r}
+analysis.data <- rbind(A,B,C,Total)
+```
+
+
+Division B appears to have the lowest customer churn throughout the entire period (monthly and by year). Division A appears to have the most customer churn and the most volatility month to month. Division C is has slightly less compared to Division A, but is noticeably more susceptible to a higher churn rate compared than Division B. The Total churn rate is similar to Division C for the entire period.
+```{r}
+analysis.data$Month = factor(analysis.data$Month, levels = month.abb)
+# Visualization
+ggplot(analysis.data, aes(x = Month, y = churn_rate, group = Division)) + 
+  geom_line(aes(y = churn_rate, color = Division, linetype = Division)) + 
+  scale_color_manual(values = c("darkred", "steelblue", "green", "black")) +
+  ggtitle("Churn Rate by Month")
+
+```
+
+```{r}
+print("Entire Period Churn Rate:")
+cat("Division A: ", sum(abs(A$Churn_Lost))/sum(A$Churn_Gained))
+cat("Division B: ", sum(abs(B$Churn_Lost))/sum(B$Churn_Gained))
+cat("Division C: ", sum(abs(C$Churn_Lost))/sum(C$Churn_Gained))
+cat("Division Total: ", sum(abs(Total$Churn_Lost))/sum(Total$Churn_Gained))
+```
+
+
+
+# Running Training Regimen
+
+Hazal Gunduz posted a dataset related to runners participating in a training regimen. I analyzed the percent change of the runners' times and compared the results to see which runner improved the most with their training regimen.
+
+The dataset can be found here: https://raw.githubusercontent.com/SaneSky109/DATA607/main/Project_2/Data/runner.data.csv
+
+## Data Preprocessing
+
+Read .csv file from github repository:
+```{r}
+run.data <- read.csv("https://raw.githubusercontent.com/SaneSky109/DATA607/main/Project_2/Data/runner.data.csv")
+```
+
+Convert the data to a long format, rather than a wide format. Data analysis will be easier in a long format:
+```{r}
+run.data <- run.data %>%
+  gather(key = "Month",
+         value = "Time",
+         c(-Athlete))
+```
+
+Organize and order the data by Athlete:
+```{r}
+run.data <- run.data %>%
+  arrange(Athlete)
+```
+
+Create a new data frame for each Athlete to make it easier to correctly calculate the percent change from each month:
+```{r}
+Debi <- run.data %>%
+  filter(Athlete == "Debi")
+
+Joana <- run.data %>%
+  filter(Athlete == "Joana")
+
+Kerol <- run.data %>%
+  filter(Athlete == "Kerol")
+
+Sukhveer <- run.data %>%
+  filter(Athlete == "Sukhveer")
+```
+
+Calculate the percent change for each Athlete:
+```{r}
+Debi <- Debi %>%
+  mutate(pct_change = (Time/lead(Time) - 1) * 100)
+
+Joana <- Joana %>%
+  mutate(pct_change = (Time/lead(Time) - 1) * 100)
+
+Kerol <- Kerol %>%
+  mutate(pct_change = (Time/lead(Time) - 1) * 100)
+
+Sukhveer <- Sukhveer %>%
+  mutate(pct_change = (Time/lead(Time) - 1) * 100)
+```
+
+Create a new data frame that contains all of the filtered Athletes:
+```{r}
+run.analysis <- rbind(Debi, Joana, Kerol, Sukhveer)
+```
+
+Remove NA values produced from the percent change calculation, as the graph needs continuous data to sucessfully run:
+```{r}
+run.analysis <- na.omit(run.analysis)
+```
+
+Update the run.analysis data frame factor names for month to better represent the percent change calculation:
+```{r}
+run.analysis$Month[run.analysis$Month == "Month.0"] <- "Month 0 to Month 1"
+run.analysis$Month[run.analysis$Month == "Month.1"] <- "Month 1 to Month 2"
+run.analysis$Month[run.analysis$Month == "Month.2"] <- "Month 2 to Month 3"
+```
+
+
+## Analysis: Runner Improvements
+
+Based on the Percent Change plot below, 
+
+* Joana had the best increase in her running time in the first month, but progress greatly decreased after Month 2.
+
+* Both Debi and Sukhveer, though slower in month 1 compared to month 0, managed to adapt to the new regimen and improve each month from month 1 to month 3.
+
+* Kerol, like Debi and Sukhveer, was slower in month 1 than month 0. Kerol showed tremendous improvement in month 1 to month 2, but progress receded after month 2.
+
+
+It can be concluded that Kerol had the largest improvement, but Debi had the most consistent month to month improvement. This indicates that Debi's running time could improve even more with more time (months) participating in the training regimen.
+
+```{r}
+ggplot(run.analysis, aes(x = Month, y = pct_change, group = Athlete)) + 
+  geom_line(aes(y = pct_change, color = Athlete, linetype = Athlete)) + 
+  scale_color_manual(values = c("darkred", "steelblue", "purple", "black")) +
+  ggtitle("Athlete Times: Percent Change")
+```
+
+
+```{r}
+cat("Debi's overall improvement was: ", max(Debi$Time) - min(Debi$Time))
+cat("Joana's overall improvement was: ", max(Joana$Time) - min(Joana$Time))
+cat("Kerol's overall improvement was: ", max(Kerol$Time) - min(Kerol$Time))
+cat("Sukhveer's overall improvement was: ", max(Sukhveer$Time) - min(Sukhveer$Time))
+```
+
+
+
+

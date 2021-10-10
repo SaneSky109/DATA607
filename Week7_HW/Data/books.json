@@ -1,0 +1,26 @@
+{"book": [
+        {
+            "Title": "Data Science for Business",
+            "Publisher": "O'Reilly",
+            "ISBN": "978-1-449-36132-7",
+            "Page_Count": "386",
+            "Author": [
+                "Foster Provost",
+                "Tom Fawcett",
+            ],
+        },
+        {
+            "Title": "Bayesian Statistics the Fun Way",
+            "Publisher": "no starch press",
+            "ISBN": "978-1-59327-956-1",
+            "Page_Count": "264",
+            "Author": "Will Kurt",
+        },
+        {
+            "Title": "Data Science from Scratch: First Principles with Python",
+            "Publisher": "O'Reilly",
+            "ISBN": "978-1-492-04113-9",
+            "Page_Count": "384",
+            "Author": "Joel Gruz"
+        }
+    ]}

@@ -1,0 +1,223 @@
+---
+title: "Assignment – Working with XML and JSON in R"
+author: "Eric Lehmphul"
+date: "10/9/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Assignment Objective
+
+Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more than one author. For each book, include the title, authors, and two or three other attributes that you find interesting.
+
+Take the information that you’ve selected about these three books, and separately create three files which store the book’s information in HTML (using an html table), XML, and JSON formats (e.g. “books.html”, “books.xml”, and “books.json”). To help you better understand the different file structures, I’d prefer that you create each of these files “by hand” unless you’re already very comfortable with the file formats.
+
+Write R code, using your packages of choice, to load the information from each of the three sources into separate R data frames. Are the three data frames identical?
+
+# Code
+
+Load required libraries:
+```{r}
+library(httr)
+library(XML)
+library(jsonlite)
+library(tidyverse)
+```
+
+## HTML
+
+The chunk of html code below was used to create the books.html file that will be used in r.
+```{r, eval=FALSE}
+<html>
+
+<table>
+  <tr>
+    <th>Title</th>
+    <th>Author</th>
+    <th>Publisher</th>
+    <th>ISBN</th>
+    <th>Page_Count</th>
+  </tr>
+  <tr>
+    <td>Data Science for Business</td>
+    <td>Foster Provost, Tom Fawcett</td>
+    <td>O'Reilly</td>
+    <td>978-1-449-36132-7</td>
+    <td>386</td>
+  </tr>
+  <tr>
+    <td>Bayesian Statistics the Fun Way</td>
+    <td>Will Kurt</td>
+    <td>no starch press</td>
+    <td>978-1-59327-956-1</td>
+    <td>264</td>
+  </tr>
+  <tr>
+    <td>Data Science from Scratch: First Principles with Python</td>
+    <td>Joel Gruz</td>
+    <td>O'Reilly</td>
+    <td>978-1-492-04113-9</td>
+    <td>384</td>
+  </tr>
+</table>
+
+</body>
+</html>
+
+```
+
+
+The chunk below reads the html file from github and converts the data into an r dataframe. 
+```{r}
+html <- GET("https://raw.githubusercontent.com/SaneSky109/DATA607/main/Week7_HW/Data/books.html")
+html <- rawToChar(html$content)
+html <- htmlParse(html)
+html <- readHTMLTable(html)
+HTML <- data.frame(html)
+
+# html dataframe
+HTML
+
+```
+
+
+## XML
+
+The chunk of xml code below was used to create the books.xml file that will be used in r.
+```{r, eval=FALSE}
+<books>
+<book id="1">
+  <Title>Data Science for Business</Title>
+  <Authors>
+    <Author>Foster Provost</Author>
+    <Author>Tom Fawcett</Author>
+  </Authors>
+<Publisher>O'Reilly</Publisher>
+<ISBN>978-1-449-36132-7</ISBN>
+<Page_Count>386</Page_Count>
+</book>
+<book id="2">
+  <Title>Bayesian Statistics the Fun Way</Title>
+  <Authors>
+    <Author>Will Kurt</Author>
+  </Authors>
+<Publisher>no starch press</Publisher>
+<ISBN>978-1-59327-956-1</ISBN>
+<Page_Count>264</Page_Count>
+</book>
+<book id="3">
+  <Title>Data Science from Scratch: First Principles with Python</Title>
+  <Authors>
+    <Author>Joel Gruz</Author>
+  </Authors>
+<Publisher>O'Reilly</Publisher>
+<ISBN>978-1-492-04113-9</ISBN>
+<Page_Count>384</Page_Count>
+</book>
+</books>
+```
+
+
+The chunk below reads the xml file from github and converts the data into an r dataframe. 
+```{r}
+xml <- GET("https://raw.githubusercontent.com/SaneSky109/DATA607/main/Week7_HW/Data/books.xml")
+xml <- rawToChar(xml$content)
+XML <- xmlToDataFrame(xml)
+
+# xml dataframe
+XML
+```
+
+
+
+
+
+
+## JSON
+
+The chunk of json code below was used to create the books.xml file that will be used in r.
+```{r, eval=FALSE}
+{
+  "Title": [
+    {
+
+      "Book1": "Data Science for Business",
+      "Book2": "Bayesian Statistics the Fun Way",
+      "Book3": "Data Science from Scratch: First Principles with Python"
+    }
+  ],
+  "Author": [
+    {
+      "Book1": "Foster Provost, Tom Fawcett",
+      "Book2": "Will Kurt",
+      "Book3": "Joel Gruz"
+    }
+  ],
+  "Publisher": [
+    {
+      "Book1": "O'Reilly",
+      "Book2": "no starch press",
+      "Book3": "O'Reilly"
+    }
+  ],
+  "ISBN": [
+    {
+      "Book1": "978-1-449-36132-7",
+      "Book2": "978-1-59327-956-1",
+      "Book3": "978-1-492-04113-9"
+    }
+  ],
+  "Page_Count": [
+    {
+      "Book1": "386",
+      "Book2": "264",
+      "Book3": "384"
+    }
+  ]
+}
+```
+
+
+The chunk below reads the json file from github and converts the data into an r dataframe. 
+```{r}
+json <- GET("https://raw.githubusercontent.com/SaneSky109/DATA607/main/Week7_HW/Data/books.json")
+json <- rawToChar(json$content)
+json <- fromJSON(json)
+
+# Create dataframe
+json <- lapply(json, function(x) {
+  x[sapply(x, is.null)] <- NA
+  unlist(x)
+})
+JSON<-as.data.frame(do.call("cbind", json))
+
+# json dataframe
+JSON
+```
+
+
+# Are the three data frames identical?
+
+The dataframes are not identical. The dataframes produced a different output for the 'Author' column. The html and json files separated multiple authors using a comma and a space ("name1, name2") and the xml file concatenated the authors together (name1name2). Another difference between the files are with the column names. The html file put NULL. before each column name (NULL.Title) where the other file types produced the desired column name (Title). Though the dataframes are different from eachother they are similar in a few areas. They all have the same dimensions and the same datatypes.
+
+
+Dataframe from html file:
+```{r}
+# html dataframe
+glimpse(HTML)
+```
+
+
+Dataframe from xml file:
+```{r}
+# xml dataframe
+glimpse(XML)
+```
+
+
+Dataframe from json file:
+```{r}
+# json dataframe
+glimpse(JSON)
+```

@@ -1,0 +1,38 @@
+{
+  "Title": [
+    {
+
+      "Book1": "Data Science for Business",
+      "Book2": "Bayesian Statistics the Fun Way",
+      "Book3": "Data Science from Scratch: First Principles with Python"
+    }
+  ],
+  "Author": [
+    {
+      "Book1": "Foster Provost, Tom Fawcett",
+      "Book2": "Will Kurt",
+      "Book3": "Joel Gruz"
+    }
+  ],
+  "Publisher": [
+    {
+      "Book1": "O'Reilly",
+      "Book2": "no starch press",
+      "Book3": "O'Reilly"
+    }
+  ],
+  "ISBN": [
+    {
+      "Book1": "978-1-449-36132-7",
+      "Book2": "978-1-59327-956-1",
+      "Book3": "978-1-492-04113-9"
+    }
+  ],
+  "Page_Count": [
+    {
+      "Book1": "386",
+      "Book2": "264",
+      "Book3": "384"
+    }
+  ]
+}

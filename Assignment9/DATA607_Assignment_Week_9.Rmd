@@ -1,0 +1,62 @@
+---
+title: 'DATA 607: Assignment 9 - Web APIs'
+author: "Eric Lehmphul"
+date: "10/22/2021"
+output: html_document
+---
+
+# Task
+
+The New York Times web site provides a rich set of APIs, as described here: https://developer.nytimes.com/apis
+
+You’ll need to start by signing up for an API key.
+
+Your task is to choose one of the New York Times APIs, construct an interface in R to read in the JSON data, and transform it into an R Data Frame.
+
+
+# Code
+
+Libraries:
+```{r}
+library(tidyverse)
+library(httr)
+library(jsonlite)
+library(kableExtra)
+```
+
+I plan to extract data from the Top Stories API which will retrieve the Top Stories from the New York Times Newspaper. I plan to extract the top stories that relate to the United States and top stories related to non-US news.
+
+
+```{r}
+# api key
+api.key <- '2UA3cNoRNwal6giF6kSPsQFfQr1dppUa'
+
+# Get data from API: US and World
+
+# url for United States data
+top.stories.us.url <- paste("https://api.nytimes.com/svc/topstories/v2/us.json?api-key=", api.key, sep='')
+
+# convert json data received from api to a data frame
+us.top.stories.data <- fromJSON(top.stories.us.url) %>% 
+  as.data.frame()
+
+
+# url for world data
+top.stories.world.url <- paste("https://api.nytimes.com/svc/topstories/v2/world.json?api-key=", api.key, sep='')
+
+# convert json data received from api to a data frame
+world.top.stories.data <- fromJSON(top.stories.world.url) %>% 
+  as.data.frame()
+
+top.stories.us.and.world<- rbind(us.top.stories.data,world.top.stories.data)
+```
+
+
+```{r}
+kbl(top.stories.us.and.world[1:5,]) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+# Conclusion
+
+The New York Times API make querying data fast and easy. As you can see above, it only requires a few lines of code to transform the Top Stories API into a data frame.

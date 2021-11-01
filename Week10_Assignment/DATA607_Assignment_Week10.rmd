@@ -1,0 +1,195 @@
+---
+title: 'DATA 607: Week 10 Assignment'
+author: "Eric Lehmphul"
+date: "10/30/2021"
+output: html_document
+---
+
+# Task
+
+ In this assignment, you should start by getting the primary example code from chapter 2 working in an R Markdown document.  You should provide a citation to this base code.  You’re then asked to extend the code in two ways:
+
+* Work with a different corpus of your choosing, and
+* Incorporate at least one additional sentiment lexicon (possibly from another R package that you’ve found through research).
+
+# Recreating Base Analysis from Textbook
+
+Silge, Julia, and David Robinson. “2 Sentiment Analysis with Tidy Data: Text Mining with R.” 2 Sentiment Analysis with Tidy Data | Text Mining with R, O'Rielly, 2017, www.tidytextmining.com/sentiment.html. 
+
+```{r}
+library(tidytext)
+
+get_sentiments("afinn")
+
+
+get_sentiments("bing")
+
+
+get_sentiments("nrc")
+```
+
+
+
+```{r}
+library(janeaustenr)
+library(dplyr)
+library(stringr)
+
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, 
+                                regex("^chapter [\\divxlc]", 
+                                      ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+```
+
+
+
+```{r}
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+```
+
+
+
+
+# Lexicon: Loughran
+
+The `get_sentiments` function from the tidytext package contains 4 lexicons c("bing", "afinn", "loughran", "ncr"). The textbook example used 3 out of the 4 available lexicons in this package ("bing", "afinn", "ncr"). I will implement the remaining available lexicon in this package, "loughran" in my analysis.
+
+```{r}
+get_sentiments("loughran")
+```
+
+
+
+# Corpus: Dracula by Bram Stoker
+
+I intend to conduct a text/sentiment analysis on the horror book classic, Dracula. We tend to consider words that are scary to be negative. I would like to see if this book uses very "negative" language.
+
+To acquire the text of Dracula, I will use the gutenbergr package. This package contains a plethora of public domain works from the Project Gutenberg collection. This package allows you to download desired texts from the Project Gutenberg collection. Dracula is id number 345 which we can use to download using `gutenberg_download()`. 
+```{r}
+library(tidyverse)
+library(gutenbergr)
+
+# metadata that contains a plethra of books
+books <- gutenberg_metadata
+
+# reorder data to more easily find books of interest for analysis
+books1 <- books[order(books[,'title']),]
+
+# Book of interest:
+# id 345: Dracula
+
+# download book
+dracula <- gutenberg_download(345)
+```
+
+
+
+# Tidy Data
+
+I am removing rows that preface the begining of the book 'Chapter 1'. I am also assigning line numbers for each row and storing which chapter the text is from.
+```{r}
+dracula1 <- dracula %>%
+  slice(-c(1:79)) %>%
+  mutate(line_num = row_number()) %>%
+  mutate(chapter = cumsum(str_detect(text, regex("^CHAPTER [\\divxlc]", ignore_case = TRUE)))) %>% 
+  ungroup()
+
+glimpse(dracula)
+```
+
+
+I am creating a column where each row represents one word.
+```{r}
+dracula_tidy <- dracula1 %>% 
+  unnest_tokens(word, text) %>%
+  mutate(word = str_replace(word, "_", ""))
+```
+
+
+Removing stop words from data. (Words like 'a', 'the', 'is', etc.)
+```{r}
+dracula.data <- dracula_tidy %>%
+  anti_join(stop_words, by = "word")
+```
+
+
+# Sentiment Analysis
+
+
+## Loughran Lexicon
+
+
+Generate the Loughran lexicon sentiment results
+```{r}
+loughran.data <- dracula.data %>% 
+      mutate(word_count = 1:n(),
+      index = word_count %/% 80) %>% 
+      inner_join(get_sentiments("loughran")) %>%
+      filter(sentiment %in% c("positive", "negative")) %>%
+      mutate(method = "Loughran") %>%
+      count(method, index = index , sentiment) %>%
+      spread(sentiment, n, fill = 0) %>%
+      mutate(sentiment = positive - negative) %>%
+      select(index, method, sentiment)
+```
+
+
+Plot the Loughran Sentiment Analysis
+```{r}
+ggplot(loughran.data, aes(x = index, sentiment)) +
+  geom_col(aes(color = sentiment)) +
+  scale_color_gradient(low = "red", high = "green") +
+  ggtitle("Dracula: Sentiment Analysis using Loughran Lexicon") +
+  xlab("Index") +
+  ylab("Sentiment") +
+  theme_minimal()
+```
+
+#### Conclusion: Loughran Lexicon
+
+As expected, Dracula contains a large amount of negative sentiment throughout the novel with sparse moments or positive sentiment. This creates the horror atmosphere that is expected in scary books.
+
+## AFINN (for comparison)
+
+
+Generate the AFINN lexicon sentiment results
+```{r}
+afinn.data <- dracula.data %>% 
+        mutate(word_count = 1:n(),
+        index = word_count %/% 80) %>% 
+        inner_join(get_sentiments("afinn")) %>%
+        group_by(index) %>%
+        summarise(sentiment = sum(value)) %>%
+        mutate(method = "AFINN")
+```
+
+
+Plot the AFINN Sentiment Analysis
+```{r}
+ggplot(afinn.data, aes(x = index, sentiment)) +
+  geom_col(aes(color = sentiment)) +
+  scale_color_gradient(low = "red", high = "green") +
+  ggtitle("Dracula: Sentiment Analysis using AFINN Lexicon") +
+  xlab("Index") +
+  ylab("Sentiment") +
+  theme_minimal()
+```
+
+#### Conclusion: AFINN Lexicon
+
+There is a large amount of negative sentiment throughout the book with a moderate number of positive sentiment spikes. This indicates that Dracula uses a substantial amount of negative words to convey the horror element throughout the book.
+
+# Conclusion:
+
+Though the results for the 'afinn' and 'loughran' lexicons appear to be drastically different in the absolute sense, the results follow a similar relative sentiment trajectory throughout the book. As expected, Dracula is comprised mostly with words that have a scary or negative sentiment. The differences in the lexicons are likely due to the fact that the lexicons contain a vast difference in vocabulary.

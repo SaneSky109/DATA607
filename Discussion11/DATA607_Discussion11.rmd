@@ -1,0 +1,63 @@
+---
+title: 'DATA 607: Week 11 Assignment/Discussion'
+author: "Eric Lehmphul"
+date: "11/3/2021"
+output: html_document
+---
+
+
+# Pandora Music
+
+Pandora is a popular music streaming service similar to Spotify, Amazon Music, and Apple Music. Pandora offers a highly personalized listening experience to each user through the Music Genome Project and Podcast Genome Project ("About Pandora"). 
+
+
+## Scenario Analysis
+
+### Who are Pandora's target users?
+
+Pandora targets anyone who enjoys listening to music or podcasts.
+
+### What are the goals of Pandora's target users?
+
+The goal of Pandora's listeners is to have a personalized listening experience with minimal interruptions. The listeners expect to be exposed to new music that is similar to what they currently listen to.
+
+### How does Pandora allow users to reach their goals?
+
+Pandora has an in-depth recommendation system that considers the music tastes of it users and an easy to use user interface to provide a personalized listening experience for each user.
+
+
+## Recommender System: Pandora
+
+
+Pandora leverages the Music Genome Project in their music recommendations. The Music Genome Project classifies every track into 450 musical attributes ("About the Music Genome Project"). The attributes range from genre to nuances like the complexity of melodies and the nasality of a singer’s voice. Each song was transcribed into the 450 attributes by musical experts manually, but Pandora has now enlisted machine learning to carry out the process ("Forbes Insights: How Pandora Knows What You Want to Hear Next"). Pandora uses the information collected by the Music Genome Project to compare with the musical tastes of a station selected by an individual user (Howe).
+
+
+To start the recommendation process as a new user, Pandora will provide "cold recommendations" that are based on personal factors like age, gender, and location. The recommendations proceed to be more and more personalized as the user interacts with the station. According to the Vice President of Data Science at Pandora, the thumbs up and thumbs down functions "are the strongest explicit signal we have" ("Forbes Insights: How Pandora Knows What You Want to Hear Next"). 
+
+
+Collaborative filtering aids in determine recommendations. Pandora examines user information to predict how similar users will behave. An example of this may occur if two users enjoy listening to a particular band and one user enjoys listening to the lead signer's solo album, the other user will be recommended to listen to the solo album as well.
+
+
+## Recommendations
+
+Most people listen to music while driving. It can be very difficult to provide a "thumbs up" or "thumbs down" while focusing on the road especially if you do not have the Pandora app for your car and are, instead, using Pandora on your phone via Bluetooth. I would suggest Pandora make a mode that equates a skip to be a thumbs down. This would make life easier for drivers who do not have car compatibility with Pandora and should equate to more personalized stations.
+
+# Github and RPubs Link
+
+Github - https://github.com/SaneSky109/DATA607/blob/main/Discussion11/DATA607_Discussion11.rmd
+
+RPubs - https://rpubs.com/SaneSky109/DATA607_Discussion11
+
+# References
+
+
+“About Pandora.” Pandora, https://www.pandora.com/about#:~:text=Pandora%20is%20a%20leading%20music,mobile%20app%2C%20the%20web%2C%20and. 
+
+
+“About the Music Genome Project®.” Pandora, https://www.pandora.com/about/mgp. 
+
+
+“Forbes Insights: How Pandora Knows What You Want to Hear Next.” Forbes, Forbes Magazine, 7 Oct. 2021, https://www.forbes.com/sites/insights-teradata/2019/10/01/how-pandora-knows-what-you-want-to-hear-next/?sh=2e0c886e3902. 
+
+
+Howe, Michael. Pandora's Music Recommender. https://courses.cs.washington.edu/courses/csep521/07wi/prj/michael.pdf. 

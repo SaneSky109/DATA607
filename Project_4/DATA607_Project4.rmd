@@ -1,0 +1,232 @@
+---
+title: 'DATA 607: Project 4'
+author: "Eric Lehmphul"
+date: "11/13/2021"
+output: rmdformats::readthedown
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align="center", fig.width = 6)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+```{r}
+library(tidyverse)
+library(R.utils)
+library(tm)
+library(caret)
+library(magrittr)
+library(e1071)
+```
+
+
+# Project Task Overview
+
+It can be useful to be able to classify new "test" documents using already classified "training" documents.  A common example is using a corpus of labeled spam and ham (non-spam) e-mails to predict whether or not a new document is spam.  
+
+For this project, you can start with a spam/ham dataset, then predict the class of new documents (either withheld from the training dataset or from another source such as your own spam folder).   One example corpus:   https://spamassassin.apache.org/old/publiccorpus/
+
+
+## Steps taken to Classify Emails as Ham or Spam
+
+1. Obtain Data
+  * Download, unzip, and untar files from the provided resource
+2. Read and Store text in the Files
+  * Created function to read text from each file in both the spam and ham data folders
+  * Reduced the size of the datasets to reduce the run time of functions and to save memory.
+3. Preprocess the emails to more easily classify emails
+  * Created function to create a corpus and perform necessary text mining cleanup (like remove punctuation, remove stop words, transform to lower case, etc.) and transform corpus to a document term matrix to allow for classification
+4. Creating Training and Testing Data
+  * Divide data into a 70% training and a 30% testing dataframe
+5. Classify Emails
+  * Use Naive Bayes classifier to create a model to classify whether an email is spam or ham.
+  * Generate confusion matrix to display results
+
+# Obtain Data
+
+The data was collected via the online email corpus resource provided by Professor Catlin: https://spamassassin.apache.org/old/publiccorpus/. I specifically used the links https://spamassassin.apache.org/old/publiccorpus/20050311_spam_2.tar.bz2 (spam) and https://spamassassin.apache.org/old/publiccorpus/20030228_easy_ham.tar.bz2 (ham).
+
+```{r}
+# Obtain the expected files after downloading the data
+url.spam <- "https://spamassassin.apache.org/old/publiccorpus/20050311_spam_2.tar.bz2"
+spam1 <- "20030228_spam.tar.bz2"
+spam2 <-"20030228_spam.tar"
+
+url.ham <- "https://spamassassin.apache.org/old/publiccorpus/20030228_easy_ham.tar.bz2"
+ham1 <- "20030228_easy_ham.tar.bz2"
+ham2 <- "20030228_easy_ham.tar"
+```
+
+Removing the files from the directory before trying to download them again allows for the code to be rerun automatically without having to manually delete the directories.
+```{r}
+# Check if files exist
+if (file.exists(spam1) | file.exists(ham1) | file.exists(spam2) | file.exists(ham2)) {
+  # Delete file if it exists
+  file.remove(spam1)
+  file.remove(spam2)
+  file.remove(ham1)
+  file.remove(ham2)
+}
+```
+
+Here I downloaded the file and specified a folder name in the directory. Then I unzipped the files with bunzip2, since the files were a bz2 extension. To get the desired files it is necessary to untar the files.
+
+```{r}
+# download file
+download.file(url.spam, destfile = spam1)
+download.file(url.ham, destfile = ham1)
+
+# unzip the bz2 file
+bunzip2(spam1)
+bunzip2(ham1)
+
+# unzip the tar file
+untar(spam2, exdir = "Project4_Data")
+untar(ham2, exdir = "Project4_Data")
+```
+
+Here I store the path to the newly created folders and output the number of files in each folder.
+```{r}
+spam_folder <- 'C:\\Users\\ericl\\OneDrive\\Documents\\CUNY MS in Data Science\\DATA-607\\R\\DATA607\\Project4_Data\\spam\\'
+ham_folder <- 'C:\\Users\\ericl\\OneDrive\\Documents\\CUNY MS in Data Science\\DATA-607\\R\\DATA607\\Project4_Data\\easy_ham\\'
+
+length(list.files(path = spam_folder))
+length(list.files(path = ham_folder))
+```
+
+# Read and Store text in the Files
+
+Created function to read and store the text present in the email files. The function takes a folder full of files and the type of email it is. I decided to use 1 for spam emails and 0 for ham emails. I use the function read_lines to read in the text on each file.
+```{r}
+read.files <- function(folder_of_files, classification){
+  files <- list.files(folder_of_files, full.names = TRUE)
+  text.data <- list.files(folder_of_files) %>%
+  as.data.frame() %>%
+  set_colnames("file") %>%
+  mutate(text = lapply(files, read_lines)) %>%
+  unnest(c(text)) %>%
+  mutate(class = classification) %>%
+  group_by(file) %>%
+  mutate(text = paste(text, collapse = " ")) %>%
+  ungroup() %>%
+  distinct()
+  
+  return(text.data)
+}
+```
+
+
+```{r}
+spam.data <- read.files(spam_folder, 1)
+ham.data <- read.files(ham_folder, 0)
+```
+
+I decided to reduce the size of both dataset to 500 to decrease the runtime of future functions. I also combined the spam and ham data to a single dataframe.
+
+```{r}
+set.seed(1999)
+
+spam_index <- sample(seq(nrow(spam.data)), size = 500)
+ham.data <- na.omit(ham.data)
+ham.data <- ham.data[1:500,]
+ham.data$class <- 0
+```
+
+
+```{r}
+spam.data <- spam.data[spam_index,]
+
+email.data <- rbind(spam.data, ham.data)
+```
+
+
+# Preprocess the emails to more easily classify
+
+I removed the graphic characters that were proving to be problematic to my analysis. I also created a function to carry out the necessary corpus preprocessing steps. The function removes numbers, punctuation, stop words, and white space. The function also transforms the text to lowercase and makes the output a document term matrix.
+
+```{r}
+email.data$text <- email.data$text %>%
+  str_replace_all("[^[:graph:]]", " ")
+
+
+clean.data <- function(dataframe){
+  emails <- VectorSource(dataframe$text)
+  emails <- VCorpus(emails)
+  corpus <- emails %>%
+    tm_map(removeNumbers) %>%    
+    tm_map(removePunctuation) %>% 
+    tm_map(tolower) %>% 
+    tm_map(PlainTextDocument) %>%          
+    tm_map(removeWords, stopwords("en")) %>%
+    tm_map(stripWhitespace) %>% 
+    tm_map(stemDocument)%>%
+    DocumentTermMatrix()
+  return(corpus)
+}
+```
+
+```{r}
+email.data.dtm <- clean.data(email.data)
+```
+
+
+# Creating Training and Testing Data
+
+To reduce the size of the document term matrix I excluded terms that were more than 95% sparse. I had to add the classification column from the email.data to the document term matrix of the email data.  
+```{r}
+email.data.classify <- email.data.dtm %>%
+  removeSparseTerms(0.95) %>%
+  as.matrix() %>%
+  as.data.frame() %>% 
+  mutate(class = email.data$class)
+
+email.data.classify$class <- factor(email.data.classify$class)
+```
+
+I assigned 70% of the data to train the classification model (naiveBayes) and the remaining 30% to test the results of the model.
+
+```{r}
+set.seed(1999)
+
+train_index <- sample(seq(nrow(email.data.classify)), size = nrow(email.data.classify)*0.7)
+
+train.data <- email.data.classify[train_index,]
+test.data <- email.data.classify[-train_index,]
+
+train.data[ , 1:583] <- ifelse(train.data[ , 1:583] == 0, "No", "Yes")
+test.data[ , 1:583] <- ifelse(test.data[ , 1:583] == 0, "No", "Yes")
+
+train.data[ , 584] <- ifelse(train.data[ , 584] == 0, "Ham", "Spam")
+test.data[ , 584] <- ifelse(test.data[ , 584] == 0, "Ham", "Spam")
+```
+
+
+# Classify Emails
+
+The naiveBayes() function will classify the emails.
+```{r}
+nb.model <- naiveBayes(train.data, train.data$class)
+```
+
+To predict the results of the model, it is important to use the testing data.
+```{r}
+model.results<- predict(nb.model, newdata = test.data)
+```
+
+
+Results of the model in confusion matrix.
+```{r}
+testing.results <- test.data$class
+
+model.vs.testing <- table(model.results, testing.results)
+
+colnames(model.vs.testing) <- c("Ham", "Spam")
+rownames(model.vs.testing) <- c("Ham", "Spam")
+
+confusionMatrix(model.vs.testing) 
+```
+
+
+# Conclusion
+
+The Naive Bayes model was able to correctly classify email type 98.33% of the time. The model only incorrectly classified 4 ham emails as spam and 3 spam email as ham out of 300 emails. 
